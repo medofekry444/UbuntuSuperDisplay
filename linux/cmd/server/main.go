@@ -17,10 +17,11 @@ import (
 
 const usage = `UbuntuSuperDisplay — GNOME Wayland virtual display prototype
 
-Usage: server <doctor|monitors|virtual> [flags]
+Usage: server <doctor|monitors|virtual|stream> [flags]
   doctor    Check desktop D-Bus and GStreamer prerequisites
   monitors  Print Mutter's active monitor layout
   virtual   Hold a virtual monitor open and consume its PipeWire frames
+  stream    Send the virtual desktop as H.264 to one Android client
 
 Run inside your GNOME desktop session. Use "server virtual -h" for options.
 `
@@ -40,6 +41,8 @@ func run(ctx context.Context, args []string, out, errOut io.Writer) error {
 		return nil
 	}
 	switch args[0] {
+	case "stream":
+		return streamCommand(ctx, args[1:], out, errOut)
 	case "doctor", "monitors":
 		if len(args) != 1 {
 			return fmt.Errorf("%s takes no arguments", args[0])

@@ -4,16 +4,20 @@ A Linux alternative to SuperDisplay, starting with a Go virtual-display backend
 for GNOME Wayland. The intended desktop is Ubuntu 26.04 / GNOME 50.1, and the
 eventual tablet client is the HONOR Pad X8a.
 
-**Current milestone: Phase 1 prototype.** It creates a Mutter screencast session,
+**Current milestone: Phase 2 streaming prototype.** The Go backend creates a Mutter screencast session,
 requests a virtual stream, starts a GStreamer PipeWire consumer, and waits for
 both captured video buffers and an additional active logical monitor. It keeps
 the display alive until Ctrl+C and cleans up its own session and subprocess.
 
-Cloud builds, simulated desktop integration tests, and a real GStreamer test
-pass. Creating an extended desktop and moving a window onto it still need
-validation on a real GNOME Wayland session. The prototype discards captured
-frames; Android, encoding, networking, USB, and input forwarding are later phases.
-60 FPS and low latency are targets, not measured results.
+The Phase 1 virtual monitor and window-drag check passed on the user's real
+GNOME session. The new `stream` command sends software-encoded H.264 over TCP,
+and the Kotlin Android app decodes it fullscreen with MediaCodec. Cloud builds,
+protocol tests, and native encoding/decoding checks pass. Playback on the HONOR
+Pad still requires hardware validation. Hardware encoding, input forwarding,
+and latency optimization are later phases; 60 FPS is a target, not a measured result.
+
+**To display the desktop on your tablet, follow [the streaming guide](docs/streaming.md).**
+The `virtual` command below remains a diagnostic that discards captured frames.
 
 ## Run on your Ubuntu desktop
 
@@ -100,6 +104,18 @@ Use the existing isolated checkout for cloud tasks. A Git worktree is unnecessar
 No background desktop services need to run in the cloud. `server doctor`
 deliberately exits with an actionable error when the desktop session is missing.
 
+For Android builds in the cloud:
+
+```sh
+bash scripts/setup-android-cloud.sh
+python3 scripts/gradle-cloud.py :app:assembleDebug :app:testDebugUnitTest
+```
+
+The setup installs a verified JDK, Android SDK 35, and Gradle 8.11.1. The helper
+uses the environment's existing proxy and workspace caches; desktop developers
+can use Android Studio or `android/gradlew` directly. Generated APKs and local
+SDK paths are excluded from Git.
+
 ## Implementation
 
 ```text
@@ -107,7 +123,10 @@ linux/
   cmd/server/              CLI, diagnostics, readiness, and shutdown
   internal/display/        Mutter D-Bus sessions and monitor state
   internal/capture/        GStreamer PipeWire consumer and buffer readiness
+  internal/stream/         H.264 encoding, access-unit framing, and TCP protocol
+android/app/               Kotlin fullscreen MediaCodec client
 docs/phase-1-validation.md  Desktop acceptance procedure
+docs/streaming.md           Tablet installation and streaming procedure
 scripts/                   Reusable cloud dependency setup and activation
 ```
 
@@ -132,7 +151,7 @@ The ScreenCast API version returned by `doctor` is not the GNOME release number.
 
 ## Next milestone
 
-After the real desktop acceptance check passes, replace the diagnostic sink with
-an encoding pipeline and build the Kotlin/MediaCodec Android client. Wi-Fi
-streaming comes first; hardware encoding, USB transport, and touch/input support
-follow with measured latency and frame-rate checks.
+Validate playback on the HONOR Pad with the test pattern, then the extended
+desktop. Hardware encoding, robust reconnect behavior, and touch/input support
+follow with measured latency and frame-rate checks. The same TCP connection
+can use ADB reverse for USB; that path also needs a real-device check.

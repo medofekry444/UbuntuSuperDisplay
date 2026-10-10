@@ -25,7 +25,6 @@ fi
 # plugins. Add only the missing CLI tools and PipeWire plugin, without root.
 # APT verifies signed Debian metadata and the downloaded package checksums.
 gst_root="$tools_root/gstreamer"
-if [[ ! -x "$gst_root/usr/bin/gst-launch-1.0" || ! -f "$gst_root/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstpipewire.so" ]]; then
   apt_root="$tools_root/ubuntu-superdisplay-apt"
   mkdir -p "$apt_root/lists/partial" "$apt_root/archives/partial" "$apt_root/packages" "$apt_root/conf.d" "$apt_root/sources.list.d"
   cat > "$apt_root/apt.conf" <<CONFIG
@@ -46,6 +45,7 @@ SOURCES
     -o 'APT::Update::Error-Mode=any'
     -o 'Acquire::Retries=3'
   )
+if [[ ! -x "$gst_root/usr/bin/gst-launch-1.0" || ! -f "$gst_root/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstpipewire.so" ]]; then
   APT_CONFIG="$apt_root/apt.conf" apt-get "${apt_options[@]}" update
   (
     cd "$apt_root/packages"
